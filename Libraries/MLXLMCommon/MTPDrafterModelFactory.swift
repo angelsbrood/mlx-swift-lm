@@ -32,9 +32,20 @@ public class MTPDrafterRegistry: AbstractModelRegistry, @unchecked Sendable {
     public static let gemma4_31B_assistant_bf16 = ModelConfiguration(
         id: "mlx-community/gemma-4-31B-it-assistant-bf16"
     )
+    public static let gemma4_E2B_assistant_bf16 = ModelConfiguration(
+        id: "mlx-community/gemma-4-E2B-it-assistant-bf16"
+    )
+    public static let gemma4_E4B_assistant_bf16 = ModelConfiguration(
+        id: "mlx-community/gemma-4-E4B-it-assistant-bf16"
+    )
 
     private static func all() -> [ModelConfiguration] {
-        [gemma4_26B_assistant_bf16, gemma4_31B_assistant_bf16]
+        [
+            gemma4_26B_assistant_bf16,
+            gemma4_31B_assistant_bf16,
+            gemma4_E2B_assistant_bf16,
+            gemma4_E4B_assistant_bf16,
+        ]
     }
 }
 
