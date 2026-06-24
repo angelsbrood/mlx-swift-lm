@@ -92,10 +92,43 @@ public final class Gemma4AssistantMaskedEmbedder: Module {
     }
 
     public func callAsFunction(_ hiddenStates: MLXArray, lmHeadWeight: MLXArray) -> MLXArray {
-        fatalError(
-            "Gemma4AssistantMaskedEmbedder forward not implemented yet — requires a "
-                + "use_ordered_embeddings=true checkpoint to verify; current fixtures "
-                + "use the tied-lm_head path.")
+        let batch = hiddenStates.dim(0)
+        let seqLen = hiddenStates.dim(1)
+
+        // Step 1: Predict centroid logits.
+        let centroidLogits = centroids(hiddenStates)
+
+        // Step 2: Top-K centroid indices via argpartition (matches mlx-vlm / HF).
+        let partitioned = argPartition(centroidLogits, kth: -topK, axis: -1)
+        let topKIndices = partitioned[.ellipsis, (-topK)...]
+
+        // Step 3: Map centroids to canonical token positions via token_ordering.
+        let ordering = tokenOrdering.asType(.int32)
+        let canonicalPositions = ordering.reshaped(numCentroids, vocabSizePerCentroid)
+        let selectedCanonical = canonicalPositions[topKIndices]
+
+        // Step 4: Gather lm_head rows for candidate tokens only.
+        let selectedFlat = selectedCanonical.reshaped(-1)
+        let selectedEmbeddings = lmHeadWeight[selectedFlat].reshaped(
+            batch, seqLen,
+            topK * vocabSizePerCentroid,
+            hiddenSize
+        )
+
+        // Step 5: Dot-product logits on the reduced candidate set.
+        let query = hiddenStates.expandedDimensions(axis: -2)
+        let selectedLogits = matmul(query, selectedEmbeddings.transposed(0, 1, 3, 2))
+            .squeezed(axis: -2)
+
+        // Step 6: Scatter into full-vocab tensor (put_along_axis parity with Python).
+        let maskValue = selectedLogits.min().item(Float.self) - 1.0
+        let scatterIdx = selectedCanonical.reshaped(batch, seqLen, -1)
+        var output = MLXArray.full(
+            [batch, seqLen, vocabSize],
+            values: MLXArray(maskValue)
+        ).asType(hiddenStates.dtype)
+        output = putAlong(output, scatterIdx, values: selectedLogits, axis: -1)
+        return output
     }
 }
 

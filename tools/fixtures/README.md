@@ -16,6 +16,8 @@ the `fixturesRevision` constant at the top of each consuming test file.
 - `FIXTURE-SCHEMA.md` — per-fixture tensor schema (keys, shapes, dtypes)
 - `FIXTURE-MANIFEST.json` — per-file SHA-256 manifest of intended contents
 - `generate_mtp_fixtures.py` (one level up at `tools/`) — regeneration script
+- `generate_centroid_fixtures.py` (one level up at `tools/`) — E2B centroid-path fixtures
+- `centroid_masked_embedder/` — vendored reference tensors for `Gemma4AssistantMaskedEmbedder` (E-series assistants with `use_ordered_embeddings=true`)
 - `inspect_drafter_layout.py` (one level up at `tools/`) — debugging utility
 
 ## Regenerating the dataset
@@ -29,3 +31,14 @@ the `fixturesRevision` constant at the top of each consuming test file.
 3. Update `fixturesRevision` in each integration-test file under
    `IntegrationTesting/IntegrationTestingTests/`.
 4. Update `FIXTURE-MANIFEST.json` to reflect the new SHA-256 values.
+
+## Centroid masked embedder fixtures
+
+E2B/E4B assistant drafters use `use_ordered_embeddings=true`, exercising
+`Gemma4AssistantMaskedEmbedder` instead of the tied-lm_head path covered by
+the 31B/26B fixtures above.
+
+1. Run `tools/generate_centroid_fixtures.py` with
+   `mlx-community/gemma-4-E2B-it-assistant-bf16` in the HF cache.
+2. Output lands in `tools/fixtures/centroid_masked_embedder/`.
+3. Verified by `CentroidMaskedEmbedderIntegrationTests` in IntegrationTesting.

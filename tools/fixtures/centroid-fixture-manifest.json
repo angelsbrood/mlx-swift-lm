@@ -1,0 +1,10 @@
+[
+  {
+    "path": "centroid_masked_embedder/case_01.safetensors",
+    "drafterModelId": "mlx-community/gemma-4-E2B-it-assistant-bf16",
+    "useOrderedEmbeddings": "True",
+    "hiddenSize": "256",
+    "vocabSize": "262144",
+    "mlxVlmSha": "d49d428e9f570dc0387b9598b3b7e0ea391590d2"
+  }
+]
